@@ -1,0 +1,20 @@
+{% extends 'userAuthentication/layout.html' %}
+
+{% block title %}Login{% endblock title %}
+
+{% comment %} MAIN CONTENT {% endcomment %}
+{% block content %}
+  {% if errorMessage %}
+    <p>{{errorMessage}}</p>
+  {% endif %}
+  <form action="{% url 'login' %}" method="post">
+    {% csrf_token %}
+    <input type = 'text' name = 'username'>
+    <br>
+    <input type = 'password' name = 'password'>
+    <br>
+    <button type = 'submit'>Login</button>
+  </form>
+
+  <p>Don't have an account?? Click <a href = {% url 'register' %}>here</a> to sign up</p>
+{% endblock content %}

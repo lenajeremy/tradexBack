@@ -1,0 +1,30 @@
+{% extends 'userAuthentication/layout.html' %}
+
+{% block title %}Register{% endblock title %}
+
+{% comment %} MAIN CONTENT {% endcomment %}
+{% block content %}
+  {% if error %}
+  <ul>
+    {% for errorMessage in error %}
+      <li>{{errorMessage}}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <form action="{% url 'register' %}" method="post">
+    {% csrf_token %}
+    <input type = 'text' name = 'first_name' placeholder = 'First_name'><br>
+    <input type = 'text' name = 'last_name' placeholder = 'Last_name'><br>
+    <input type = 'text' name = 'username' placeholder = "Username"><br>
+    <input type = 'email' name = 'email' placeholder = 'Email'><br>
+    <input type = 'password' name = 'password' placeholder = "password"><br>
+    <input type = 'password' name = 'conf_password' placeholder = "Confirm your password"><br>
+    <select name = 'user_type' required>
+      <option value = '' disabled selected>Are you a buyer or a seller?</option>
+      <option value = 'buyer'>I'm a buyer</option>
+      <option value = 'seller'>I'm a seller</option>
+    </select><br>
+    <button type = 'submit'>Login</button>
+  </form>
+  <p>Already have an account?? Click <a href = {% url 'login' %}>here</a> to sign in</p>
+{% endblock content %}
