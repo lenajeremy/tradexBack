@@ -10,6 +10,7 @@ class User(AbstractUser):
   )
   userType = models.CharField(choices=USERTYPE_CHOICES, default='buyer', max_length=9)
   profile_picture = models.ImageField(blank = True, upload_to = 'profile_images', default = 'profile_images/avatar.jpg')
+  cover_picture = models.ImageField(blank = True, upload_to = 'cover_pictures', default = 'cover_pictures/cover.jpeg')
   paypal_email_address = models.EmailField()
   
   def getProducts(self):
@@ -18,7 +19,7 @@ class User(AbstractUser):
     return self.store.get().products.all()
 
   def serialize(self):
-    data_to_return = {'id': self.id, 'userName': self.username, 'firstName': self.first_name, 'lastName': self.last_name, 'profilePicture': self.profile_picture.name, 'postsMade': [post.serialize() for post in self.posts.all()], 'userType': self.userType, 'accountDetails': self.account.get().serialize(), 'emailAddress': self.email, 'paypalEmail': self.paypal_email_address, 'profile': self.profile.serialize()}
+    data_to_return = {'id': self.id, 'userName': self.username, 'firstName': self.first_name, 'lastName': self.last_name, 'profilePicture': self.profile_picture.name, 'postsMade': [post.serialize() for post in self.posts.all()], 'userType': self.userType, 'accountDetails': self.account.get().serialize(), 'emailAddress': self.email, 'paypalEmail': self.paypal_email_address, 'profile': self.profile.serialize(), 'coverPicture': self.cover_picture.name}
     if self.userType == 'buyer':
       data_to_return['cart'] = self.cart.get().serialize()
     else:

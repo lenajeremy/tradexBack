@@ -52,8 +52,6 @@ def get_user(request, user_id):
   except Http404 as e:
     return JsonResponse({'message': e.__str__(), 'status': 404})
 
-def get_all_users(request):
-  return JsonResponse({'users': [user.serialize() for user in User.objects.exclude(username = 'admin')], 'status': 200})
 
 def get_all_posts(request):
   print(int(request.GET.get('start')))
@@ -143,3 +141,16 @@ def edit_user_profile(request, user_id, operation):
       print(e)
     return JsonResponse({'message': "User profile has been updated", "status": 200})
   return JsonResponse({'message': "Post or PUT request required", "status": 400})
+
+def remove_product(request, product_id):
+  user = User.objects.get(id = int(request.GET.get('user_id')))
+  if user.userType == 'seller':
+    try:
+      product = get_object_or_404(Product, id = product_id)
+      product.delete()
+      return JsonResponse({'message': "Product has been removed from store", 'status': 200})
+    except Http404:
+      return JsonResponse({'message': "Product with that id not found", 'status': 404})
+  return JsonResponse({'message': 'Forbidden operation', 'status': 400})
+
+  
