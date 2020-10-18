@@ -9,7 +9,7 @@ class Store(models.Model):
   user = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'store')
   
   def serialize(self):
-    data_to_return = {'id': self.id, 'owner': self.user.username, 'user_id': self.user.id, 'products': [product.serialize() for product in self.products.all()]}
+    data_to_return = {'id': self.id, 'owner': self.user.username, 'user_id': self.user.id, 'products': [product.serialize() for product in self.products.order_by('-dateCreated')]}
     return data_to_return
   
   def __str__(self):
