@@ -126,20 +126,25 @@ def post_operation(request, operation, post_id):
 @csrf_exempt
 def edit_user_profile(request, user_id, operation):
   user = User.objects.get(id = user_id)
+  edited = None
   if request.method == 'POST' and operation == 'edit':
-    bio = request.POST['bio']
-    status = request.POST['status']
-    userProfile = user.profile
-    userProfile.bio=bio
-    userProfile.status = status
-    userProfile.save()
-    try:
-      new_profile_image = request.FILES['profile_image']
-      user.profile_picture = new_profile_image
+    field = request.POST['field']
+    if field == 'profile_image':
+      user.profile_picture = request.FILES['profile_image']
       user.save()
-    except Exception as e:
-      print(e)
-    return JsonResponse({'message': "User profile has been updated", "status": 200})
+      edited = user.profile_picture.url
+    elif field == 'cover_image':
+      user.cover_picture = request.FILES['cover_image']
+      user.save()
+      edited = user.cover_picture.url
+    else:      
+      userProfile = user.profile
+      userProfile.bio=request.POST['status']
+      userProfile.status = request.POST['bio']
+      edited = {'bio': request.POST['bio'], 'status': request.POST['status']}
+      userProfile.save()
+    print(edited)
+    return JsonResponse({'message': "User profile has been updated", 'edited': edited,  "status": 200})
   return JsonResponse({'message': "Post or PUT request required", "status": 400})
 
 def remove_product(request, product_id):
