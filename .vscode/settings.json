@@ -1,5 +1,6 @@
 {
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true,
-  "python.linting.pep8Enabled": false
+  "python.linting.pep8Enabled": false,
+  "python.pythonPath": "C:\\Users\\JerryScript\\.virtualenvs\\TRADEX-8RWb3czZ\\Scripts\\python.exe"
 }
