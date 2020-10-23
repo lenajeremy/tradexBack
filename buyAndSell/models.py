@@ -6,7 +6,7 @@ import random, json
 
 # Create your models here.
 class Store(models.Model):
-  user = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'store')
+  user = models.OneToOneField(User, on_delete=models.CASCADE, related_name = 'store')
   
   def serialize(self):
     data_to_return = {'id': self.id, 'owner': self.user.username, 'user_id': self.user.id, 'products': [product.serialize() for product in self.products.order_by('-dateCreated')]}
@@ -21,7 +21,7 @@ class Product(models.Model):
   description = models.CharField(max_length=200)
   price = models.IntegerField()
   image = models.ImageField(upload_to = 'product_images')
-  watchers = models.ManyToManyField(User, related_name='watched_products')
+  watchers = models.ManyToManyField(User, related_name='watched_products', blank = True)
   store = models.ForeignKey(Store, on_delete = models.CASCADE, related_name = 'products')
   isAvailable = models.BooleanField(default = True)
   availableStock = models.IntegerField(default = 1)
@@ -41,7 +41,7 @@ class Product(models.Model):
       return f"{self.name} {self.price}"
 
 class Cart(models.Model):
-  user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'cart')
+  user = models.OneToOneField(User, on_delete = models.CASCADE, related_name = 'cart')
   products = models.ManyToManyField(Product, related_name='cart')
   
   def serialize(self):

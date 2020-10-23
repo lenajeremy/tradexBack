@@ -15,15 +15,15 @@ class User(AbstractUser):
   
   def getProducts(self):
     if self.userType == 'buyer':
-      return self.cart.get().products.all()
-    return self.store.get().products.all()
+      return self.cart.products.all()
+    return self.store.products.all()
 
   def serialize(self):
     data_to_return = {'id': self.id, 'userName': self.username, 'firstName': self.first_name, 'lastName': self.last_name, 'profilePicture': self.profile_picture.url, 'postsMade': [post.serialize() for post in self.posts.all()], 'userType': self.userType, 'accountDetails': self.account.get().serialize(), 'emailAddress': self.email, 'paypalEmail': self.paypal_email_address, 'profile': self.profile.serialize(), 'coverPicture': self.cover_picture.url}
     if self.userType == 'buyer':
-      data_to_return['cart'] = self.cart.get().serialize()
+      data_to_return['cart'] = self.cart.serialize()
     else:
-      data_to_return['products'] = self.store.get().serialize()
+      data_to_return['products'] = self.store.serialize()
       
     return data_to_return
   

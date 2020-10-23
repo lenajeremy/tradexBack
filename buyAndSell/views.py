@@ -28,22 +28,22 @@ def new_post(request):
   
   return JsonResponse({'message': "Post request required", 'status': 403})
 
-@login_required
+@csrf_exempt
 def new_product(request):
   if request.method == 'POST':
-    if request.user.userType == 'buyer':
-      return JsonResponse({'message': "Operation DisAllowed, User is not a seller", 'status': 403})
-    else:  
-      data_sent = json.loads(request.body)
-      print(data_sent)
-      name = data_sent['name']
-      description = data_sent['description']
-      price = data_sent['price']
-      imageUrl = data_sent['imageUrl']
-      store = request.user.getCart()
-      Product.objects.create(name = name, description = description ,price = price, imageUrl = imageUrl, store = store)
-  
-      return JsonResponse({'message': 'Product has been added to your store', 'status': 200})
+    try:
+      user = get_object_or_404(User, id = request.POST['user_id'])
+      name = request.POST['name']
+      description = request.POST['description']
+      price = int(request.POST['price'])
+      image = request.FILES['imageUrl']
+      store = user.store
+      availableQuantity=int(request.POST['availableQuantity'])
+      product = Product.objects.create(name = name, availableStock = availableQuantity, description = description ,price = price, image = image, store = store)
+      product.save()
+      return JsonResponse({'message': 'Product has been added to your store', 'details':product.serialize(), 'status': 200})
+    except Http404:
+      return JsonResponse({'message': "User with that credential does not exist", 'status': 404})
   return JsonResponse({'message': "Post Request Required", 'status': 403})
 
 def get_user(request, user_id):
@@ -137,6 +137,7 @@ def edit_user_profile(request, user_id, operation):
       user.cover_picture = request.FILES['cover_image']
       user.save()
       edited = user.cover_picture.url
+      print(edited)
     else:      
       userProfile = user.profile
       userProfile.bio=request.POST['status']
