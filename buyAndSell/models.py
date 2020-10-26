@@ -59,7 +59,7 @@ class Post(models.Model):
   dateCreated = models.DateTimeField(auto_now_add = True)
   
   def serialize(self):
-    data_to_return = {'id': self.id, "content": self.content, "poster": self.poster.username, 'image': self.image.url, 'dateCreated': self.dateCreated.timestamp(), 'number_of_likes': len(self.likes.all()), 'posterPicture': self.poster.profile_picture.url}
+    data_to_return = {'id': self.id, "content": self.content,'posterId': self.poster.id, "poster": self.poster.username, 'image': self.image.url, 'dateCreated': self.dateCreated.timestamp(), 'number_of_likes': len(self.likes.all()), 'posterPicture': self.poster.profile_picture.url}
     return data_to_return
   
   def test(self, start, end):

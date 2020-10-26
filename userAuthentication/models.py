@@ -19,7 +19,7 @@ class User(AbstractUser):
     return self.store.products.all()
 
   def serialize(self):
-    data_to_return = {'id': self.id, 'userName': self.username, 'firstName': self.first_name, 'lastName': self.last_name, 'profilePicture': self.profile_picture.url, 'postsMade': [post.serialize() for post in self.posts.all()], 'userType': self.userType, 'accountDetails': self.account.get().serialize(), 'emailAddress': self.email, 'paypalEmail': self.paypal_email_address, 'profile': self.profile.serialize(), 'coverPicture': self.cover_picture.url}
+    data_to_return = {'id': self.id, 'userName': self.username, 'firstName': self.first_name, 'lastName': self.last_name, 'profilePicture': self.profile_picture.url, 'postsMade': [post.serialize() for post in self.posts.order_by('-dateCreated')], 'userType': self.userType, 'accountDetails': self.account.get().serialize(), 'emailAddress': self.email, 'paypalEmail': self.paypal_email_address, 'profile': self.profile.serialize(), 'coverPicture': self.cover_picture.url}
     if self.userType == 'buyer':
       data_to_return['cart'] = self.cart.serialize()
     else:
