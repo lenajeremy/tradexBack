@@ -1,10 +1,10 @@
-from django.shortcuts import render, reverse
+from django.shortcuts import render, reverse, get_object_or_404
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.password_validation import validate_password, ValidationError
 from django.db import IntegrityError
 from .models import User
-from django.contrib.auth.hashers import PBKDF2SHA1PasswordHasher
+from django.contrib.auth.hashers import BCryptSHA256PasswordHasher
 from buyAndSell.models import Store, Account, Cart
 from .models import User_profile
 from django.views.decorators.csrf import csrf_exempt
@@ -12,7 +12,7 @@ import json
 
 
 # Create your views here.
-hasher = PBKDF2SHA1PasswordHasher()
+hasher = BCryptSHA256PasswordHasher()
 @csrf_exempt
 def register(request):
   if request.method == "POST":
@@ -25,7 +25,6 @@ def register(request):
     user_type = data_sent['user_type']
     email = data_sent['email']
     paypayEmail = data_sent['paypalEmail']
-    print(password)
     
     if password != '' and password == conf_password:
       hashedPassword = hasher.encode(password=password, salt=hasher.salt())
@@ -66,14 +65,13 @@ def login_view(request):
     data_sent = json.loads(request.body)
     username = data_sent['username']
     password = data_sent['password']
-    
+
     user = authenticate(username = username, password = password)
     if user is not None:
       login(request, user)
       return JsonResponse({'message': "You have successfully logged in", 'status': 200, 'id': user.id})
     else:
       return JsonResponse({'message': 'Invalid Login Credentials', "status": 403})
-  
   return JsonResponse({'message': "Post request required", 'status': 403})
 
     
