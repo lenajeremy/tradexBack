@@ -1,1 +1,1 @@
-web: gunicorn tradex.wsgi --log-file -
+web: gunicorn tradex.wsgi:application --log-file -
