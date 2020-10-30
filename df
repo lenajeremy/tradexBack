@@ -1,0 +1,71 @@
+[33mcommit d53c369259895a7061c5bec70c4ab4c847b54923[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Thu Oct 29 23:44:56 2020 -1100
+
+    'cool'
+
+[33mcommit 87fecb38356b20c2133f3b3bd0c8d8dcd1a6c6b5[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Wed Oct 28 11:50:49 2020 -1100
+
+    runtime.txt
+
+[33mcommit 5e9b6d6d2597c640cc54cb7dc33b00d0ff31c2c8[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Wed Oct 28 11:41:19 2020 -1100
+
+    hosted in heroku already
+
+[33mcommit c22bc94135b1dc468e3d8e2e13cc97df17b88504[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Wed Oct 28 21:29:32 2020 -0700
+
+    setup the s3 bucket
+
+[33mcommit d06964b0757a0d64602b63d1b665e7e255c8dead[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Mon Oct 26 00:15:07 2020 -0700
+
+    I deleted my views.py(Sobbing)
+
+[33mcommit 00c236453703e999f0ddcb208aa34f6d291ea164[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Thu Oct 22 21:56:16 2020 -0700
+
+    setting up heroku
+
+[33mcommit 319a1b9c011dc547c4562c193e968c57181614f2[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Thu Oct 22 21:31:56 2020 -0700
+
+    jfash
+
+[33mcommit 216d013883e7d82103b765b51a0e5eacaac1dd4c[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Wed Oct 21 16:26:40 2020 -0700
+
+    added s3 bucket configurations
+
+[33mcommit 4dd424e38fd5d7020a0408ebda54c3ba3c13ec6a[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Tue Oct 20 09:12:01 2020 -0700
+
+    jkaflsdfjalsd
+
+[33mcommit 2ae89c6f6d784b97e182240d47772421d95ed338[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Sun Oct 18 10:14:07 2020 -0700
+
+    some stuff
+
+[33mcommit 3a9212ea46d44a136b5fbd9afa7390cc5b53bc55[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Sat Oct 17 14:49:08 2020 -0700
+
+    cool stuff
+
+[33mcommit 7c4ff45e8acff3a374d3eb4d85256b8e16ca8aee[m
+Author: Jeremiah Lena <jeremiahlena13@gmail.com>
+Date:   Wed Oct 14 16:19:44 2020 -0700
+
+    new stuff
