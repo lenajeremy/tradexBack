@@ -1,6 +1,5 @@
 {
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true,
-  "python.linting.pycodestyleEnabled": false,
-  "python.pythonPath": "C:\\Users\\JerryScript\\AppData\\Local\\Programs\\Python\\Python38-32\\python.exe"
+  "python.linting.pycodestyleEnabled": false
 }
