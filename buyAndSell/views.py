@@ -14,7 +14,6 @@ def index(request):
 
 @csrf_exempt
 def new_post(request):
-  print('this is a new post')
   if request.method == 'POST':
     content = request.POST['content']
     image = request.FILES['imageUrl']
@@ -23,28 +22,27 @@ def new_post(request):
       poster = get_object_or_404(User, id = id)
       post = Post.objects.create(content = content, poster = poster, image = image)
       post.save()
+      return JsonResponse({'message': 'Your post has been successfully uploaded', 'status': 200, 'post_details': post.serialize(poster)})
     except Http404:
       return JsonResponse({'message': 'You have to login', 'errors': ['You need to login to create posts'], 'status': 403})
-    return JsonResponse({'message': 'Your post has been successfully uploaded', 'status': 200, 'post_details': post.serialize()})
   
   return JsonResponse({'message': "Post request required", 'status': 403})
 
-@login_required
+@csrf_exempt 
 def new_product(request):
   if request.method == 'POST':
-    if request.user.userType == 'buyer':
+    user = User.objects.get(id = request.POST['user_id'])
+    if user.userType == 'buyer':
       return JsonResponse({'message': "Operation DisAllowed, User is not a seller", 'status': 403})
     else:  
-      data_sent = json.loads(request.body)
-      print(data_sent)
-      name = data_sent['name']
-      description = data_sent['description']
-      price = data_sent['price']
-      imageUrl = data_sent['imageUrl']
-      store = request.user.getCart()
-      Product.objects.create(name = name, description = description ,price = price, imageUrl = imageUrl, store = store)
+      name = request.POST['name']
+      description = request.POST['description']
+      price = int(request.POST['price'])
+      imageUrl = request.FILES['imageUrl']
+      availableStock = request.POST['availableQuantity']
+      product = Product.objects.create(name = name, description = description ,price = price, image = imageUrl, store = user.store, availableStock = availableStock)
   
-      return JsonResponse({'message': 'Product has been added to your store', 'status': 200})
+      return JsonResponse({'message': 'Product has been added to your store', 'status': 200, 'details': product.serialize()})
   return JsonResponse({'message': "Post Request Required", 'status': 403})
 
 def get_user(request, user_id):
@@ -57,6 +55,12 @@ def get_user(request, user_id):
 def get_all_posts(request):
   print(int(request.GET.get('start')))
   print(int(request.GET.get('end')))
+  user = None
+  try:
+    user = User.objects.get(id = request.GET.get('user'))
+  except User.DoesNotExist:
+    pass
+  print(user)
   start = Post.objects.count() - int(request.GET.get('start'))
   end = Post.objects.count() - int(request.GET.get('end'))
   valid_posts = []
@@ -65,7 +69,7 @@ def get_all_posts(request):
     if post.test(start, end):
       valid_posts.append(post)
       
-  return JsonResponse({'posts': [post.serialize() for post in valid_posts]})
+  return JsonResponse({'posts': [post.serialize(user) for post in valid_posts]})
 
 def get_post(request, post_id):
   try:
@@ -74,18 +78,9 @@ def get_post(request, post_id):
     return JsonResponse({'message': e.__str__(), 'status': 404})
 
 
-def get_store(request, owner_id):
-  user = User.objects.get(id = owner_id)
-  store = user.store.get()
-  start = store.products.count() - int(request.GET.get('start'))
-  end = store.products.count() - int(request.GET.get('end'))
-  valid_posts = []
-  
-  for product in store.products.order_by('-dateCreated'):
-    if product.test(start, end):
-      valid_posts.append(product)
-  
-  return JsonResponse({'products': [product.serialize() for product in valid_posts], 'status': 200})
+def get_store(request):
+  user = User.objects.get(id = request.GET.get('owner_id'))
+  return JsonResponse({'products': [product.serialize() for product in user.store.products.order_by('-dateCreated')], 'status': 200})
 
 @csrf_exempt
 def post_operation(request, operation, post_id):
@@ -98,11 +93,13 @@ def post_operation(request, operation, post_id):
         liker = User.objects.get(id = information_sent['user_id'])
         if Like.objects.filter(post = post, liker = liker).count() == 0:
           Like.objects.create(post = post, liker = liker)
+          liked = True
         else:
           like = Like.objects.get(post = post, liker = liker)
+          liked = False
           like.delete()
           
-        return JsonResponse({'message': 'Operation has been carried out', 'newLikeCount': Like.objects.filter(post = post).count(), 'status': 200})
+        return JsonResponse({'message': 'Operation has been carried out', 'newLikeCount': Like.objects.filter(post = post).count(), 'status': 200, 'liked': liked})
       
       elif operation == 'remove':
         # do another thing
@@ -148,6 +145,7 @@ def edit_user_profile(request, user_id, operation):
     return JsonResponse({'message': "User profile has been updated", 'edited': edited,  "status": 200})
   return JsonResponse({'message': "Post or PUT request required", "status": 400})
 
+@csrf_exempt
 def remove_product(request, product_id):
   user = User.objects.get(id = int(request.GET.get('user_id')))
   if user.userType == 'seller':

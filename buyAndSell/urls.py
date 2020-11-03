@@ -13,5 +13,6 @@ urlpatterns = [
     path('posts/<int:post_id>', views.get_post, name = 'get_post'),
     path('product/<int:product_id>/remove', views.remove_product, name = 'remove_product'),
     path('post/<int:post_id>/<str:operation>', views.post_operation, name = 'post_operation'),
-    path('user/<int:user_id>/<str:operation>', views.edit_user_profile, name = 'edit_user_profile')
+    path('user/<int:user_id>/<str:operation>', views.edit_user_profile, name = 'edit_user_profile'),
+    path('store/', views.get_store, name = 'get_store')
 ]

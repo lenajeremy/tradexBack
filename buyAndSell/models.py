@@ -58,8 +58,9 @@ class Post(models.Model):
   image = models.ImageField(upload_to = 'post_images')
   dateCreated = models.DateTimeField(auto_now_add = True)
   
-  def serialize(self):
+  def serialize(self, user):
     data_to_return = {'id': self.id, "content": self.content,'posterId': self.poster.id, "poster": self.poster.username, 'image': self.image.url, 'dateCreated': self.dateCreated.timestamp(), 'number_of_likes': len(self.likes.all()), 'posterPicture': self.poster.profile_picture.url}
+    data_to_return['isLiked'] = user in [like.liker for like in self.likes.all()]
     return data_to_return
   
   def test(self, start, end):
@@ -87,7 +88,7 @@ class Like(models.Model):
   liker = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'likes')
   
   def __str__(self):
-    return f"Like {len(self.post.likes.all())} on {self.post}"
+    return f"{self.liker} liked {self.post}"
   
   def serialize(self):
     data_to_return = {'id': self.id, 'post_id': self.post.id, 'liker_id': self.liker.id, 'post_content_shortened': self.post.__str__()}
