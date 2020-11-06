@@ -161,3 +161,5 @@ ADMIN_MEDIA_PREFIX = STATIC_URL + 'admin/'
 STATICFILES_FINDERS = (           'django.contrib.staticfiles.finders.FileSystemFinder',    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
 AWS_DEFAULT_ACL = None
+
+#stuff
