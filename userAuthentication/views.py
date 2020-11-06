@@ -46,7 +46,6 @@ def register(request):
         login(request, testUser)
         
         return JsonResponse({'message': 'You have successfully registered and is logged in already', 'status': 200, 'id': testUser.id})
-      
       except ValidationError as e:
         return JsonResponse({'message': 'There is an error in the registration process', 'status': 403, 'errors': e.messages})
       except IntegrityError as e:

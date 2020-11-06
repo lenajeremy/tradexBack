@@ -37,11 +37,10 @@ def new_product(request):
     else:  
       name = request.POST['name']
       description = request.POST['description']
-      price = int(request.POST['price'])
+      price = float(request.POST['price'])
       imageUrl = request.FILES['imageUrl']
       availableStock = request.POST['availableQuantity']
-      product = Product.objects.create(name = name, description = description ,price = price, image = imageUrl, store = user.store, availableStock = availableStock)
-  
+      product = Product.objects.create(name = name, description = description ,price = price, initialStock = availableStock, image = imageUrl, store = user.store, availableStock = availableStock)
       return JsonResponse({'message': 'Product has been added to your store', 'status': 200, 'details': product.serialize()})
   return JsonResponse({'message': "Post Request Required", 'status': 403})
 
@@ -79,7 +78,7 @@ def get_post(request, post_id):
 
 
 def get_store(request):
-  user = User.objects.get(id = request.GET.get('owner_id'))
+  user = User.objects.get(username = request.GET.get('owner_username'))
   return JsonResponse({'products': [product.serialize() for product in user.store.products.order_by('-dateCreated')], 'status': 200})
 
 @csrf_exempt
@@ -157,4 +156,21 @@ def remove_product(request, product_id):
       return JsonResponse({'message': "Product with that id not found", 'status': 404})
   return JsonResponse({'message': 'Forbidden operation', 'status': 400})
 
-  
+@csrf_exempt
+def add_to_cart(request):
+  try:
+    cart = User.objects.get(id = json.loads(request.body)['user_id']).cart
+    product = Product.objects.get(id = json.loads(request.body)['product_id'])
+    operation = json.loads(request.body)['operation']
+    quantity = json.loads(request.body)['quantity']
+    if operation == 'add_to_cart':
+      cart.products.add(product);product.availableStock-=quantity
+    elif operation == 'remove_from_cart':
+      cart.products.remove(product);product.availableStock+=quantity
+    product.save()
+    cart.save()
+    return JsonResponse({'message': f"Product has been {operation}", 'status': 200, 'details': product.serialize()})
+  except User.DoesNotExist:
+    return JsonResponse({'message': "cart with that credential does not exist", 'status': 404})
+  except Product.DoesNotExist:
+    return JsonResponse({'message': "product with that id does not exist", 'status': 404})

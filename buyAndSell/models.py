@@ -25,6 +25,7 @@ class Product(models.Model):
   store = models.ForeignKey(Store, on_delete = models.CASCADE, related_name = 'products')
   isAvailable = models.BooleanField(default = True)
   availableStock = models.IntegerField(default = 1)
+  initialStock = models.IntegerField(default = 1)
   isDelivered = models.BooleanField(default = False)
   dateCreated = models.DateTimeField(auto_now_add=True)
   
@@ -34,7 +35,7 @@ class Product(models.Model):
       return self
   
   def serialize(self):
-    data_to_return = {'id': self.id, 'name': self.name, 'description': self.description, 'price': self.price, 'currentStock': self.availableStock, 'image': self.image.url, 'isAvailable': self.isAvailable, 'dateCreated': self.dateCreated.timestamp(), 'owner': {'id': self.store.user.id, 'username': self.store.user.username}}
+    data_to_return = {'id': self.id, 'name': self.name, 'description': self.description, 'price': self.price, 'initialStock': self.initialStock, 'currentStock': self.availableStock, 'image': self.image.url, 'isAvailable': self.isAvailable, 'dateCreated': self.dateCreated.timestamp(), 'owner': {'id': self.store.user.id, 'username': self.store.user.username}}
     return data_to_return
   
   def __str__(self):
@@ -45,7 +46,7 @@ class Cart(models.Model):
   products = models.ManyToManyField(Product, related_name='cart')
   
   def serialize(self):
-    data_to_return = {'id': self.id, 'user': {'id': self.user.id, 'username': self.user.username}, 'products': [product.serialize() for product in self.products.all()]}
+    data_to_return = {'id': self.id, 'user': {'id': self.user.id, 'username': self.user.username}, 'products': [product.serialize() for product in self.products.order_by('-dateCreated')]}
     return data_to_return
   
   def __str__(self):
