@@ -34,17 +34,18 @@ def register(request):
         validate_password(password, testUser)
         # if the password validation is successful, save the user to the database and then redirect to the index route
         testUser.save()
-        
+
+        User_profile.objects.create(user = testUser)
+        Account.objects.create(owner = testUser)
+
         # create a store for the user if the user is a seller
         if testUser.userType == 'seller':
           Store.objects.create(user = testUser)
         else:
           Cart.objects.create(user = testUser)
-        
-        User_profile.objects.create(user = testUser)
-        Account.objects.create(owner = testUser)
+
         login(request, testUser)
-        
+        Notification.objects.create(notification_type = 'admin', text = "Welcome to TradeX, the best place to buy and sell online. Please, don't forget to update your profile! Enjoy!", owner = testUser, related_user = User.objects.get(username = 'admin'))
         return JsonResponse({'message': 'You have successfully registered and is logged in already', 'status': 200, 'id': testUser.id})
       except ValidationError as e:
         return JsonResponse({'message': 'There is an error in the registration process', 'status': 403, 'errors': e.messages})
