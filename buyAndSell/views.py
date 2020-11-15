@@ -1,6 +1,6 @@
 import json
 from django.shortcuts import render, reverse, get_object_or_404
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, Http404, HttpResponse
 from django.contrib.auth import login, logout
 from .models import User, Post, Store, Product, Cart, Account, Like, Order
 from django.contrib.auth.decorators import login_required
@@ -52,22 +52,15 @@ def get_user(request, user_id):
 
 
 def get_all_posts(request):
-  print(int(request.GET.get('start')))
-  print(int(request.GET.get('end')))
   user = None
   try:
     user = User.objects.get(id = request.GET.get('user'))
   except User.DoesNotExist:
     pass
-  print(user)
-  start = Post.objects.count() - int(request.GET.get('start'))
-  end = Post.objects.count() - int(request.GET.get('end'))
-  valid_posts = []
-  
-  for post in Post.objects.order_by('-dateCreated'):
-    if post.test(start, end):
-      valid_posts.append(post)
-      
+  start = int(request.GET.get('start')) - 1
+  end = int(request.GET.get('end'))
+  print(Post.objects.all()[end:start])
+  valid_posts = list(Post.objects.all()[start:end])
   return JsonResponse({'posts': [post.serialize(user) for post in valid_posts], 'status': 200})
 
 def get_post(request, post_id):
@@ -164,8 +157,25 @@ def add_to_cart(request):
     operation = json.loads(request.body)['operation']
     quantity = json.loads(request.body)['quantity']
     if operation == 'add_to_cart' and not product in [order.product for order in cart.orders.all()]:
+      Notification.objects.create(text = f"{cart.user.username} added your product {product.name} to cart", owner = product.store.get().user, related_user = cart.user, notification_type = 'from_store_to_cart')
+  #     notification_type = (
+  #   ('new_post', 'NEW_POST'),
+  #   ('update_profile', 'UPDATE_PROFILE'),
+  #   ('user_update_profile', 'USER_UPDATE_PROFILE'),
+  #   ('view_store', 'VIEW_STORE'),
+  #   ('from_store_to_cart', 'PLUS_STC'),
+  #   ('to_store_from_cart', "MINUS_STC"),
+  #   ('followed', 'FOLLOW'),
+  #   ('new_product', 'NEW_PRODUCT')
+  # )
+  # text = models.CharField(max_length = 200)
+  # owner = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'notifications')
+  # related_user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'notification_related')
+  # notification_type = models.CharField(choices = notification_type, default = 'admin', max_length = 20)
+  # dateCreated = models.DateTimeField(auto_now = True)
       order = Order.objects.create(product = product, number = quantity, cart = cart);product.availableStock-=quantity
     elif operation == 'remove_from_cart':
+      Notification.objects.create(text = f"{cart.user.username} has removed your product {product.name} from his cart. Message him to know why.", notification_type = 'to_store_from_cart', owner = product.store.get().user, related_user = cart.user)
       order = cart.orders.get(product = product)
       product.availableStock+=order.number;order.delete()
     elif operation == 'increase' and product.availableStock - quantity >= 0:
@@ -174,6 +184,7 @@ def add_to_cart(request):
     elif operation == 'decrease' and product.availableStock + quantity <= product.initialStock:
       order = cart.orders.get(product = product)
       if order.number - quantity <= 0:
+        Notification.objects.create(text = f"{cart.user.username} has removed your product {product.name} from his cart. Message him to know why.", notification_type = 'to_store_from_cart', owner = product.store.get().user, related_user = cart.user)
         details = order.serialize();product.availableStock+=quantity;order.delete()
         return JsonResponse({'message': f"Product has been deleted", 'status': 200, 'details': details})
       else:
@@ -194,3 +205,10 @@ def get_product(request):
     return JsonResponse({'details': product.serialize(), 'status': 200})
   except Product.DoesNotExist:
     return JsonResponse({'details': None, 'status': 404, 'message': "Product was not found"})
+  
+
+def checkout(request):
+  response = HttpResponse('this is the http response')
+  print(request.headers)
+  response.set_cookie(key = 'csrftoken', value = 'cool stuff')
+  return response

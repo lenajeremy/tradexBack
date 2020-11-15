@@ -147,4 +147,4 @@ class Notification(models.Model):
     return self.text
 
   def serialize(self):
-    data_to_return = {'text': self.text, 'owner': self.owner.username, 'related_user': self.related_user, 'notification_type': self.notification_type, 'dateCreated': self.dateCreated}
+    data_to_return = {'text': self.text, 'owner': self.owner.username, 'related_user': self.related_user.username, 'notification_type': self.notification_type, 'dateCreated': self.dateCreated}

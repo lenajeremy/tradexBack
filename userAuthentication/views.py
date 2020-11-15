@@ -1,13 +1,13 @@
 from django.shortcuts import render, reverse, get_object_or_404
 from django.http import HttpResponseRedirect, JsonResponse
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.password_validation import validate_password, ValidationError
 from django.db import IntegrityError
 from .models import User
 from django.contrib.auth.hashers import BCryptSHA256PasswordHasher
-from buyAndSell.models import Store, Account, Cart
+from buyAndSell.models import Store, Account, Cart, Notification
 from .models import User_profile
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, get_token
 import json
 
 
@@ -65,11 +65,12 @@ def login_view(request):
     data_sent = json.loads(request.body)
     username = data_sent['username']
     password = data_sent['password']
-
+    
     user = authenticate(username = username, password = password)
     if user is not None:
       login(request, user)
-      return JsonResponse({'message': "You have successfully logged in", 'status': 200, 'id': user.id})
+      response = JsonResponse({'message': "You have successfully logged in", 'status': 200, 'id': user.id})
+      response.set_cookie('csrftoken', get_token(request))
     else:
       return JsonResponse({'message': 'Invalid Login Credentials', "status": 403})
   return JsonResponse({'message': "Post request required", 'status': 403})
@@ -78,3 +79,16 @@ def login_view(request):
 def logout_view(request):
   logout(request)
   return JsonResponse({'message':'You have been logged out', 'status': 200})
+
+
+def authenticate(username, password):
+  return_value = None
+  try:
+    user = User.objects.get(username = username)
+    print(user)
+    if hasher.verify(password = password, encoded = user.password):
+      return_value = user
+      print(return_value)
+  except User.DoesNotExist:
+    pass
+  return return_value
