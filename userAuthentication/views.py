@@ -1,6 +1,6 @@
 from django.shortcuts import render, reverse, get_object_or_404
 from django.http import HttpResponseRedirect, JsonResponse
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.password_validation import validate_password, ValidationError
 from django.db import IntegrityError
 from .models import User
@@ -67,10 +67,12 @@ def login_view(request):
     password = data_sent['password']
     
     user = authenticate(username = username, password = password)
+    print(user)
     if user is not None:
       login(request, user)
       response = JsonResponse({'message': "You have successfully logged in", 'status': 200, 'id': user.id})
       response.set_cookie('csrftoken', get_token(request))
+      return response
     else:
       return JsonResponse({'message': 'Invalid Login Credentials', "status": 403})
   return JsonResponse({'message': "Post request required", 'status': 403})
@@ -81,14 +83,12 @@ def logout_view(request):
   return JsonResponse({'message':'You have been logged out', 'status': 200})
 
 
-def authenticate(username, password):
-  return_value = None
-  try:
-    user = User.objects.get(username = username)
-    print(user)
-    if hasher.verify(password = password, encoded = user.password):
-      return_value = user
-      print(return_value)
-  except User.DoesNotExist:
-    pass
-  return return_value
+# def authenticate(username, password):
+#   return_value = None
+#   try:
+#     user = User.objects.get(username = username)
+#     if hasher.verify(password = password, encoded = user.password):
+#       return_value = user
+#   except User.DoesNotExist:
+#     pass
+#   return return_value

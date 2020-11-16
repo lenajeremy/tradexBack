@@ -29,11 +29,6 @@ class Product(models.Model):
   isDelivered = models.BooleanField(default = False)
   dateCreated = models.DateTimeField(auto_now_add=True)
   
-  def test(self, start, end):
-    index = list(Product.objects.all()).index(self)
-    if index <= start and index >= end:
-      return self
-  
   def serialize(self):
     data_to_return = {'id': self.id, 'name': self.name, 'description': self.description, 'price': self.price, 'initialStock': self.initialStock, 'currentStock': self.availableStock, 'image': self.image.url, 'isAvailable': self.isAvailable, 'dateCreated': self.dateCreated.timestamp(), 'owner': {'id': self.store.user.id, 'username': self.store.user.username}}
     return data_to_return
@@ -134,6 +129,7 @@ class Notification(models.Model):
     ('view_store', 'VIEW_STORE'),
     ('from_store_to_cart', 'PLUS_STC'),
     ('to_store_from_cart', "MINUS_STC"),
+    ('like_post', 'LIKE_POST'),
     ('followed', 'FOLLOW'),
     ('new_product', 'NEW_PRODUCT')
   )
@@ -147,4 +143,14 @@ class Notification(models.Model):
     return self.text
 
   def serialize(self):
-    data_to_return = {'text': self.text, 'owner': self.owner.username, 'related_user': self.related_user.username, 'notification_type': self.notification_type, 'dateCreated': self.dateCreated}
+    data_to_return = {'text': self.text, 'owner': self.owner.username, 'related_picture': self.related_user.profile_picture.url, 'related_user': self.related_user.id, 'notification_type': self.notification_type, 'dateCreated': self.dateCreated.timestamp()}
+    return data_to_return
+  
+class Message(models.Model):
+  sender = models.OneToOneField(User, on_delete=models.CASCADE, related_name = 'message_sent')
+  recepient = models.OneToOneField(User, on_delete=models.CASCADE, related_name = 'message_received')
+  content = models.TextField()
+  received = models.BooleanField(default = False)
+  
+  def __str__(self):
+    return f"{self.content[0:30]}"

@@ -2,7 +2,7 @@ import json
 from django.shortcuts import render, reverse, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, Http404, HttpResponse
 from django.contrib.auth import login, logout
-from .models import User, Post, Store, Product, Cart, Account, Like, Order
+from .models import User, Post, Store, Product, Cart, Account, Like, Order, Notification
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 import os
@@ -46,7 +46,10 @@ def new_product(request):
 
 def get_user(request, user_id):
   try:
-    return JsonResponse({'user': get_object_or_404(User, id = user_id).serialize(), 'status': 200})
+    user = get_object_or_404(User, id = user_id)
+    details = user.serialize()
+    details['notifications'] = [notification.serialize() for notification in Notification.objects.order_by('-dateCreated').filter(owner = user)]
+    return JsonResponse({'user': details, 'status': 200})
   except Http404 as e:
     return JsonResponse({'message': e.__str__(), 'status': 404})
 
@@ -57,10 +60,11 @@ def get_all_posts(request):
     user = User.objects.get(id = request.GET.get('user'))
   except User.DoesNotExist:
     pass
+  print(request.GET.get('start'))
   start = int(request.GET.get('start')) - 1
   end = int(request.GET.get('end'))
-  print(Post.objects.all()[end:start])
-  valid_posts = list(Post.objects.all()[start:end])
+  valid_posts = list(Post.objects.order_by('-dateCreated')[start:end])
+  print(valid_posts)
   return JsonResponse({'posts': [post.serialize(user) for post in valid_posts], 'status': 200})
 
 def get_post(request, post_id):
@@ -85,6 +89,7 @@ def post_operation(request, operation, post_id):
         liker = User.objects.get(id = information_sent['user_id'])
         if Like.objects.filter(post = post, liker = liker).count() == 0:
           Like.objects.create(post = post, liker = liker)
+          Notification.objects.create(owner = post.poster, related_user = liker, text = f"{liker.username} liked your post...", notification_type = 'like_post')
           liked = True
         else:
           like = Like.objects.get(post = post, liker = liker)
@@ -157,25 +162,10 @@ def add_to_cart(request):
     operation = json.loads(request.body)['operation']
     quantity = json.loads(request.body)['quantity']
     if operation == 'add_to_cart' and not product in [order.product for order in cart.orders.all()]:
-      Notification.objects.create(text = f"{cart.user.username} added your product {product.name} to cart", owner = product.store.get().user, related_user = cart.user, notification_type = 'from_store_to_cart')
-  #     notification_type = (
-  #   ('new_post', 'NEW_POST'),
-  #   ('update_profile', 'UPDATE_PROFILE'),
-  #   ('user_update_profile', 'USER_UPDATE_PROFILE'),
-  #   ('view_store', 'VIEW_STORE'),
-  #   ('from_store_to_cart', 'PLUS_STC'),
-  #   ('to_store_from_cart', "MINUS_STC"),
-  #   ('followed', 'FOLLOW'),
-  #   ('new_product', 'NEW_PRODUCT')
-  # )
-  # text = models.CharField(max_length = 200)
-  # owner = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'notifications')
-  # related_user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'notification_related')
-  # notification_type = models.CharField(choices = notification_type, default = 'admin', max_length = 20)
-  # dateCreated = models.DateTimeField(auto_now = True)
+      Notification.objects.create(text = f"{cart.user.username} added your product {product.name} to cart", owner = product.store.user, related_user = cart.user, notification_type = 'from_store_to_cart')
       order = Order.objects.create(product = product, number = quantity, cart = cart);product.availableStock-=quantity
     elif operation == 'remove_from_cart':
-      Notification.objects.create(text = f"{cart.user.username} has removed your product {product.name} from his cart. Message him to know why.", notification_type = 'to_store_from_cart', owner = product.store.get().user, related_user = cart.user)
+      Notification.objects.create(text = f"{cart.user.username} has removed your product {product.name} from his cart. Message him to know why.", notification_type = 'to_store_from_cart', owner = product.store.user, related_user = cart.user)
       order = cart.orders.get(product = product)
       product.availableStock+=order.number;order.delete()
     elif operation == 'increase' and product.availableStock - quantity >= 0:
@@ -184,7 +174,7 @@ def add_to_cart(request):
     elif operation == 'decrease' and product.availableStock + quantity <= product.initialStock:
       order = cart.orders.get(product = product)
       if order.number - quantity <= 0:
-        Notification.objects.create(text = f"{cart.user.username} has removed your product {product.name} from his cart. Message him to know why.", notification_type = 'to_store_from_cart', owner = product.store.get().user, related_user = cart.user)
+        Notification.objects.create(text = f"{cart.user.username} has removed your product {product.name} from his cart. Message him to know why.", notification_type = 'to_store_from_cart', owner = product.store.user, related_user = cart.user)
         details = order.serialize();product.availableStock+=quantity;order.delete()
         return JsonResponse({'message': f"Product has been deleted", 'status': 200, 'details': details})
       else:
