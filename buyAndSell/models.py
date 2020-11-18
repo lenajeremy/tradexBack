@@ -68,7 +68,7 @@ class Post(models.Model):
       return f"{self.content[:25]}..."
   
 class Account(models.Model):
-  owner = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'account')
+  owner = models.OneToOneField(User, on_delete = models.CASCADE, related_name = 'account')
   number = models.IntegerField(default = random.randint(9999999, 99999999), unique = True)
   amount = models.IntegerField(default = 0)
   
@@ -146,11 +146,19 @@ class Notification(models.Model):
     data_to_return = {'text': self.text, 'owner': self.owner.username, 'related_picture': self.related_user.profile_picture.url, 'related_user': self.related_user.id, 'notification_type': self.notification_type, 'dateCreated': self.dateCreated.timestamp()}
     return data_to_return
   
-class Message(models.Model):
-  sender = models.OneToOneField(User, on_delete=models.CASCADE, related_name = 'message_sent')
-  recepient = models.OneToOneField(User, on_delete=models.CASCADE, related_name = 'message_received')
-  content = models.TextField()
-  received = models.BooleanField(default = False)
+class Conversation(models.Model):
+  users = models.ManyToManyField(User, related_name = 'conversation')
+  last_modified = models.DateTimeField(auto_now= True)
   
+class Message(models.Model):
+  conversation = models.ForeignKey(Conversation, related_name = 'messages', on_delete = models.CASCADE)
+  sender = models.ForeignKey(User, related_name = 'messages_sent', on_delete = models.CASCADE)
+  receiver = models.ForeignKey(User, related_name = 'messages_received', on_delete = models.CASCADE)
+  received = models.BooleanField(default = False)
+  content = models.TextField()
+  date_sent = models.DateTimeField(auto_now_add=True)
+  
+  def serialize(self):
+    return {'recipient': {'first_name': self.receiver.first_name, 'last_name': self.receiver.last_name}, 'recipient_picture': self.receiver.profile_picture.url, 'content': self.content, 'date_sent': self.date_sent.timestamp(), 'message_id': self.id, 'conversation_id': self.conversation.id}
   def __str__(self):
     return f"{self.content[0:30]}"

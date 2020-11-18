@@ -2,7 +2,7 @@ import json
 from django.shortcuts import render, reverse, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, Http404, HttpResponse
 from django.contrib.auth import login, logout
-from .models import User, Post, Store, Product, Cart, Account, Like, Order, Notification
+from .models import User, Post, Store, Product, Cart, Account, Like, Order, Notification, Conversation
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 import os
@@ -49,6 +49,7 @@ def get_user(request, user_id):
     user = get_object_or_404(User, id = user_id)
     details = user.serialize()
     details['notifications'] = [notification.serialize() for notification in Notification.objects.order_by('-dateCreated').filter(owner = user)]
+    print(details)
     return JsonResponse({'user': details, 'status': 200})
   except Http404 as e:
     return JsonResponse({'message': e.__str__(), 'status': 404})
@@ -89,7 +90,8 @@ def post_operation(request, operation, post_id):
         liker = User.objects.get(id = information_sent['user_id'])
         if Like.objects.filter(post = post, liker = liker).count() == 0:
           Like.objects.create(post = post, liker = liker)
-          Notification.objects.create(owner = post.poster, related_user = liker, text = f"{liker.username} liked your post...", notification_type = 'like_post')
+          if post.poster != liker:
+            Notification.objects.create(owner = post.poster, related_user = liker, text = f"{liker.username} liked your post...", notification_type = 'like_post')
           liked = True
         else:
           like = Like.objects.get(post = post, liker = liker)
@@ -196,6 +198,35 @@ def get_product(request):
   except Product.DoesNotExist:
     return JsonResponse({'details': None, 'status': 404, 'message': "Product was not found"})
   
+def messages_view(request):
+  if request.method == 'GET':
+    operation = request.GET.get('operation')
+    user_id = int(request.GET.get('user_id'))
+    start = request.GET.get('start');end = request.GET.get('end')
+    if operation == 'get_last_messages_for_each_messaged':
+      last_messages = [message.serialize() for message in [chat.messages_sent.last() for chat in Chat.objects.filter(chatter = User.objects.get(id = user_id))]]
+      return JsonResponse({'messages': last_messages, 'status': 200})
+    elif operation == 'get_chat_messages':
+      chat_id = int(request.GET.get('chat_id'))
+      return JsonResponse({'messages': [message.serialize() for message in Chat.objects.get(id = chat_id).messages_sent.all()], 'status': 200})
+  else:
+    if operation == 'send_message':
+      chatter_with = User.objects.get(id = int(request.POST.get('chatter_with_id')))
+      chatter = User.objects.get(id = user_id)
+      chat_id = int(request.POST.get('chat_id'))
+      content = request.POST['content']
+      try:
+        Message.objects.create(conversation = get_object_or_404(Converstaion, id = chat_id), content = content, sender = chatter, receiver = chatter_with)
+      except Http404:
+        conversation = Conversation()
+        [conversation.users.add(user) for user in [chatter, chatter_with]]
+        conversation.save()
+        Message.objects.create(conversation = conversation, content = content, sender = chatter, receiver = chatter_with)
+      return JsonResponse({'status': 200, 'message': 'message sent'})
+    return JsonResponse({'message': 'Invalid Operation', 'status': 403})
+        
+      
+                       
 
 def checkout(request):
   response = HttpResponse('this is the http response')
