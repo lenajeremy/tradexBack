@@ -201,14 +201,20 @@ def get_product(request):
 def messages_view(request):
   if request.method == 'GET':
     operation = request.GET.get('operation')
-    user_id = int(request.GET.get('user_id'))
-    start = request.GET.get('start');end = request.GET.get('end')
+    user_id = int(request.GET.get('ref_id'))
+    # start = request.GET.get('start');end = request.GET.get('end')
     if operation == 'get_last_messages_for_each_messaged':
-      last_messages = [message.serialize() for message in [chat.messages_sent.last() for chat in Chat.objects.filter(chatter = User.objects.get(id = user_id))]]
+      last_messages = [message.serialize() for message in [chat.messages_sent.last() for chat in Conversation.objects.filter(chatter = User.objects.get(id = user_id))]]
       return JsonResponse({'messages': last_messages, 'status': 200})
     elif operation == 'get_chat_messages':
       chat_id = int(request.GET.get('chat_id'))
-      return JsonResponse({'messages': [message.serialize() for message in Chat.objects.get(id = chat_id).messages_sent.all()], 'status': 200})
+      step = int(request.GET.get('step'))
+      conversation = Conversation.objects.get(id = chat_id)
+      if User.objects.get(id = user_id) in conversation.users.all():
+        return JsonResponse({'messages': [message.serialize() for message in conversation.messages.order_by('-date_sent')[step * 10 : (step + 1) * 10]], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture.url, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
+      else:
+        return JsonResponse({'message': "You are not permitted to view this information", 'status': 403})
+      
   else:
     if operation == 'send_message':
       chatter_with = User.objects.get(id = int(request.POST.get('chatter_with_id')))

@@ -159,6 +159,25 @@ class Message(models.Model):
   date_sent = models.DateTimeField(auto_now_add=True)
   
   def serialize(self):
-    return {'recipient': {'first_name': self.receiver.first_name, 'last_name': self.receiver.last_name}, 'recipient_picture': self.receiver.profile_picture.url, 'content': self.content, 'date_sent': self.date_sent.timestamp(), 'message_id': self.id, 'conversation_id': self.conversation.id}
+    return {
+      'recipient':
+        {
+          'id': self.receiver.id,
+          'first_name': self.receiver.first_name,
+          'last_name': self.receiver.last_name,
+          'picture': self.receiver.profile_picture.url
+        },
+      'sender': 
+        {
+          'first_name': self.sender.first_name, 
+          'last_name': self.sender.last_name,
+          'id': self.sender.id,
+          'picture': self.sender.profile_picture.url
+        },
+      'content': self.content,
+      'date_sent': self.date_sent.timestamp(),
+      'message_id': self.id,
+      'conversation_id': self.conversation.id
+    }
   def __str__(self):
     return f"{self.content[0:30]}"
