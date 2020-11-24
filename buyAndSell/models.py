@@ -51,11 +51,15 @@ class Cart(models.Model):
 class Post(models.Model):
   content = models.TextField()
   poster = models.ForeignKey(User, on_delete= models.DO_NOTHING, related_name='posts')
-  image = models.ImageField(upload_to = 'post_images')
+  image = models.ImageField(upload_to = 'post_images', blank = True)
   dateCreated = models.DateTimeField(auto_now_add = True)
   
   def serialize(self, user):
-    data_to_return = {'id': self.id, "content": self.content,'posterId': self.poster.id, "poster": self.poster.username, 'image': self.image.url, 'dateCreated': self.dateCreated.timestamp(), 'number_of_likes': len(self.likes.all()), 'posterPicture': self.poster.profile_picture.url}
+    if self.image.name:
+      image = self.image.url
+    else:
+      image = None
+    data_to_return = {'id': self.id, "content": self.content,'posterId': self.poster.id, "poster": self.poster.username, 'image': image , 'dateCreated': self.dateCreated.timestamp(), 'number_of_likes': len(self.likes.all()), 'posterPicture': self.poster.profile_picture.url}
     data_to_return['isLiked'] = user in [like.liker for like in self.likes.all()]
     return data_to_return
   

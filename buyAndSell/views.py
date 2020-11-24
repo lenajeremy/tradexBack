@@ -16,11 +16,17 @@ def index(request):
 def new_post(request):
   if request.method == 'POST':
     content = request.POST['content']
-    image = request.FILES['imageUrl']
+    try:
+      image = request.FILES['imageUrl']
+    except Exception as e:
+      image = None
     id = request.POST['user_id']
     try:
       poster = get_object_or_404(User, id = id)
-      post = Post.objects.create(content = content, poster = poster, image = image)
+      if image:
+        post = Post.objects.create(content = content, poster = poster, image = image)
+      else:
+        post = Post.objects.create(content = content, poster = poster)
       post.save()
       return JsonResponse({'message': 'Your post has been successfully uploaded', 'status': 200, 'post_details': post.serialize(poster)})
     except Http404:
@@ -45,6 +51,8 @@ def new_product(request):
   return JsonResponse({'message': "Post Request Required", 'status': 403})
 
 def get_user(request, user_id):
+  print(request.user)
+  print(request.COOKIES)
   try:
     user = get_object_or_404(User, id = user_id)
     details = user.serialize()
@@ -198,9 +206,10 @@ def get_product(request):
   except Product.DoesNotExist:
     return JsonResponse({'details': None, 'status': 404, 'message': "Product was not found"})
   
+@csrf_exempt
 def messages_view(request):
+  operation = request.GET.get('operation')
   if request.method == 'GET':
-    operation = request.GET.get('operation')
     user_id = int(request.GET.get('ref_id'))
     # start = request.GET.get('start');end = request.GET.get('end')
     if operation == 'get_last_messages_for_each_messaged':
@@ -211,16 +220,17 @@ def messages_view(request):
       step = int(request.GET.get('step'))
       conversation = Conversation.objects.get(id = chat_id)
       if User.objects.get(id = user_id) in conversation.users.all():
-        return JsonResponse({'messages': [message.serialize() for message in conversation.messages.order_by('-date_sent')[step * 10 : (step + 1) * 10]], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture.url, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
+        return JsonResponse({'messages': [message.serialize() for message in conversation.messages.all()[step * 10 : (step + 1) * 10]], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture.url, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
       else:
         return JsonResponse({'message': "You are not permitted to view this information", 'status': 403})
-      
   else:
     if operation == 'send_message':
-      chatter_with = User.objects.get(id = int(request.POST.get('chatter_with_id')))
+      print(operation, 'the stuff worked')
+      # chatter_with = User.objects.get(id = int(request.POST.get('chatter_with_id')))
       chatter = User.objects.get(id = user_id)
       chat_id = int(request.POST.get('chat_id'))
       content = request.POST['content']
+      print(content, chat_id, chatter_with)
       try:
         Message.objects.create(conversation = get_object_or_404(Converstaion, id = chat_id), content = content, sender = chatter, receiver = chatter_with)
       except Http404:

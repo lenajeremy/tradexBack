@@ -1,5 +1,5 @@
 from django.shortcuts import render, reverse, get_object_or_404
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.password_validation import validate_password, ValidationError
 from django.db import IntegrityError
@@ -73,7 +73,9 @@ def login_view(request):
     if user is not None:
       login(request, user)
       response = JsonResponse({'message': "You have successfully logged in", 'status': 200, 'id': user.id})
-      response.set_cookie('csrftoken', get_token(request))
+      # response.set_cookie('csrftoken', get_token(request))
+      response.set_cookie('sessionid', hasher.encode(password = user.username + str(user.id), salt = hasher.salt()).split('bcrypt_sha256$$'))
+      print('the cookie should have been set by now')
       return response
     else:
       return JsonResponse({'message': 'Invalid Login Credentials', "status": 403})

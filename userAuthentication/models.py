@@ -12,6 +12,7 @@ class User(AbstractUser):
   profile_picture = models.ImageField(blank = True, upload_to = 'profile_images', default = 'profile_images/avatar.jpg')
   cover_picture = models.ImageField(blank = True, upload_to = 'cover_pictures', default = 'cover_pictures/cover.jpeg')
   paypal_email_address = models.EmailField()
+  # ref_key = models.TextField(unique = True)
   
   def getProducts(self):
     if self.userType == 'buyer':
