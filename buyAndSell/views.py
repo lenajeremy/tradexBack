@@ -2,7 +2,7 @@ import json
 from django.shortcuts import render, reverse, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, Http404, HttpResponse
 from django.contrib.auth import login, logout
-from .models import User, Post, Store, Product, Cart, Account, Like, Order, Notification, Conversation
+from .models import User, Post, Store, Product, Cart, Account, Like, Order, Notification, Conversation, Message
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 import os
@@ -209,36 +209,34 @@ def get_product(request):
 @csrf_exempt
 def messages_view(request):
   operation = request.GET.get('operation')
+  user_id = int(request.GET.get('ref_id'))
+  chat_id = int(request.GET.get('chat_id'))
   if request.method == 'GET':
-    user_id = int(request.GET.get('ref_id'))
-    # start = request.GET.get('start');end = request.GET.get('end')
     if operation == 'get_last_messages_for_each_messaged':
-      last_messages = [message.serialize() for message in [chat.messages_sent.last() for chat in Conversation.objects.filter(chatter = User.objects.get(id = user_id))]]
+      last_messages = [message.serialize() for message in [chat.messages_sent.last() for chat in Conversation.objects.filter(chatter = User.objects.get(id = user_id)).order_by('-last_modified')]]
       return JsonResponse({'messages': last_messages, 'status': 200})
     elif operation == 'get_chat_messages':
-      chat_id = int(request.GET.get('chat_id'))
       step = int(request.GET.get('step'))
       conversation = Conversation.objects.get(id = chat_id)
       if User.objects.get(id = user_id) in conversation.users.all():
-        return JsonResponse({'messages': [message.serialize() for message in conversation.messages.all()[step * 10 : (step + 1) * 10]], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture.url, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
+        return JsonResponse({'messages': [message.serialize() for message in conversation.messages.order_by('-date_sent')[step * 15 : (step + 1) * 15]], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture.url, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
       else:
         return JsonResponse({'message': "You are not permitted to view this information", 'status': 403})
   else:
     if operation == 'send_message':
-      print(operation, 'the stuff worked')
-      # chatter_with = User.objects.get(id = int(request.POST.get('chatter_with_id')))
+      message = None
       chatter = User.objects.get(id = user_id)
-      chat_id = int(request.POST.get('chat_id'))
       content = request.POST['content']
-      print(content, chat_id, chatter_with)
+      chatter_with = Conversation.objects.get(id = chat_id).users.exclude(id = user_id).get()
       try:
-        Message.objects.create(conversation = get_object_or_404(Converstaion, id = chat_id), content = content, sender = chatter, receiver = chatter_with)
+        message = Message.objects.create(conversation = get_object_or_404(Conversation, id = chat_id), content = content, sender = chatter, receiver = chatter_with)
+        message.conversation.save()
       except Http404:
         conversation = Conversation()
         [conversation.users.add(user) for user in [chatter, chatter_with]]
         conversation.save()
         Message.objects.create(conversation = conversation, content = content, sender = chatter, receiver = chatter_with)
-      return JsonResponse({'status': 200, 'message': 'message sent'})
+      return JsonResponse({'status': 200, 'message': message.serialize()})
     return JsonResponse({'message': 'Invalid Operation', 'status': 403})
         
       
