@@ -219,7 +219,8 @@ def messages_view(request):
       step = int(request.GET.get('step'))
       conversation = Conversation.objects.get(id = chat_id)
       if User.objects.get(id = user_id) in conversation.users.all():
-        return JsonResponse({'messages': [message.serialize() for message in conversation.messages.order_by('-date_sent')[step * 15 : (step + 1) * 15]], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture.url, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
+        messages = list(conversation.messages.order_by('-date_sent')[step * 15 : (step + 1) * 15]);messages.reverse()
+        return JsonResponse({'messages': [message.serialize() for message in messages], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture.url, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
       else:
         return JsonResponse({'message': "You are not permitted to view this information", 'status': 403})
   else:
