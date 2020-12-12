@@ -8,6 +8,11 @@ from django.views.decorators.csrf import csrf_exempt
 import os
 
 # Create your views here.
+class Console:
+  def log(self, stuff):
+    print(stuff)
+console = Console()
+
 @login_required
 def index(request):
   return render(request, 'buyAndSell/index.html', context={'allPosts':Post.objects.all().order_by('-dateCreated'), 'len': len(request.user.getProducts())})
@@ -51,13 +56,16 @@ def new_product(request):
   return JsonResponse({'message': "Post Request Required", 'status': 403})
 
 def get_user(request, user_id):
-  print(request.user)
-  print(request.COOKIES)
   try:
+    isSelf = request.GET.get('self')
+    if isSelf == 'false':
+      isSelf = False
+    else:
+      isSelf = True
     user = get_object_or_404(User, id = user_id)
-    details = user.serialize()
-    details['notifications'] = [notification.serialize() for notification in Notification.objects.order_by('-dateCreated').filter(owner = user)]
-    print(details)
+    details = user.serialize(isSelf)
+    if isSelf:
+      details['notifications'] = [notification.serialize() for notification in Notification.objects.order_by('-dateCreated').filter(owner = user)]
     return JsonResponse({'user': details, 'status': 200})
   except Http404 as e:
     return JsonResponse({'message': e.__str__(), 'status': 404})
@@ -227,18 +235,24 @@ def messages_view(request):
         return JsonResponse({'message': "You are not permitted to view this information", 'status': 403})
   else:
     if operation == 'send_message':
+      undecided = request.GET.get('undecided');
       message = None
+      if undecided == 'false':
+        chatter_with = Conversation.objects.get(id = chat_id).users.exclude(id = user_id).get()
+      else:
+        # the id of the user to chat with is given as the chat id if the message is from the profile
+        chatter_with = User.objects.get(id = chat_id)
       chatter = User.objects.get(id = user_id)
       content = request.POST['content']
-      chatter_with = Conversation.objects.get(id = chat_id).users.exclude(id = user_id).get()
+
       try:
-        message = Message.objects.create(conversation = get_object_or_404(Conversation, id = chat_id), content = content, sender = chatter, receiver = chatter_with)
+        conversation = Conversation.objects.filter(users = chatter).filter(users = chatter_with).get()
+        message = Message.objects.create(conversation = conversation, content = content, sender = chatter, receiver = chatter_with)
         message.conversation.save()
-      except Http404:
-        conversation = Conversation()
+      except Conversation.DoesNotExist:
+        conversation = Conversation.objects.create()
         [conversation.users.add(user) for user in [chatter, chatter_with]]
-        conversation.save()
-        Message.objects.create(conversation = conversation, content = content, sender = chatter, receiver = chatter_with)
+        message = Message.objects.create(conversation = conversation, content = content, sender = chatter, receiver = chatter_with)
       return JsonResponse({'status': 200, 'message': message.serialize()})
     return JsonResponse({'message': 'Invalid Operation', 'status': 403})
         
