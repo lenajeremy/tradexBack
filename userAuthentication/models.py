@@ -19,12 +19,16 @@ class User(AbstractUser):
       return self.cart.products.all()
     return self.store.products.all()
 
-  def serialize(self):
-    data_to_return = {'id': self.id, 'userName': self.username, 'firstName': self.first_name, 'lastName': self.last_name, 'profilePicture': self.profile_picture.url, 'postsMade': [post.serialize(self) for post in self.posts.order_by('-dateCreated')], 'userType': self.userType, 'accountDetails': self.account.serialize(), 'emailAddress': self.email, 'paypalEmail': self.paypal_email_address, 'profile': self.profile.serialize(), 'coverPicture': self.cover_picture.url, 'latestMessages': [conversation.messages.last().serialize() for conversation in self.conversation.order_by('-last_modified')]}
-    if self.userType == 'buyer':
-      data_to_return['cart'] = self.cart.serialize()
+  def serialize(self, isSelf):
+    data_to_return = None
+    if isSelf:
+      data_to_return = {'id': self.id, 'userName': self.username, 'firstName': self.first_name, 'lastName': self.last_name, 'profilePicture': self.profile_picture.url, 'postsMade': [post.serialize(self) for post in self.posts.order_by('-dateCreated')], 'userType': self.userType, 'accountDetails': self.account.serialize(), 'emailAddress': self.email, 'paypalEmail': self.paypal_email_address, 'profile': self.profile.serialize(), 'coverPicture': self.cover_picture.url, 'latestMessages': [conversation.messages.last().serialize() for conversation in self.conversation.order_by('-last_modified')]}
+      if self.userType == 'buyer':
+        data_to_return['cart'] = self.cart.serialize()
+      else:
+        data_to_return['products'] = self.store.serialize()
     else:
-      data_to_return['products'] = self.store.serialize()
+      data_to_return = {'id': self.id, 'userName': self.username,'firstName': self.first_name, 'lastName': self.last_name, 'profilePicture': self.profile_picture.url, 'postsMade': [post.serialize(self) for post in self.posts.order_by('-dateCreated')], 'userType': self.userType, 'profile': self.profile.serialize(), 'coverPicture': self.cover_picture.url}
       
     return data_to_return
   
