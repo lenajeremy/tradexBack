@@ -7,11 +7,6 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 import os
 
-# Create your views here.
-class Console:
-  def log(self, stuff):
-    print(stuff)
-console = Console()
 
 @login_required
 def index(request):
