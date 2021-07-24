@@ -5,9 +5,13 @@ from django.contrib.auth import login, logout
 from .models import User, Post, Store, Product, Cart, Account, Like, Order, Notification, Conversation, Message
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-import os
 
-
+def mark_message_as_read(auth_user_id:int, message:Message):
+  #would only mark the message as read if the receiver opens the message
+  if message.receiver == User.objects.get(id = auth_user_id):
+    message.received = True
+    message.save()
+  
 @login_required
 def index(request):
   return render(request, 'buyAndSell/index.html', context={'allPosts':Post.objects.all().order_by('-dateCreated'), 'len': len(request.user.getProducts())})
@@ -58,7 +62,7 @@ def get_user(request, user_id):
     else:
       isSelf = True
     user = get_object_or_404(User, id = user_id)
-    details = user.serialize(isSelf)
+    details = user.serialize(isSelf, user_id)
     if isSelf:
       details['notifications'] = [notification.serialize() for notification in Notification.objects.order_by('-dateCreated').filter(owner = user)]
     return JsonResponse({'user': details, 'status': 200})
@@ -216,16 +220,21 @@ def messages_view(request):
   chat_id = int(request.GET.get('chat_id'))
   if request.method == 'GET':
     if operation == 'get_last_messages_for_each_messaged':
-      last_messages = [message.serialize() for message in [chat.messages_sent.last() for chat in Conversation.objects.filter(chatter = User.objects.get(id = user_id)).order_by('-last_modified')]]
+      last_messages = [message.serialize(user_id) for message in [chat.messages_sent.last() for chat in Conversation.objects.filter(chatter = User.objects.get(id = user_id)).order_by('-last_modified')]]
       return JsonResponse({'messages': last_messages, 'status': 200})
     elif operation == 'get_chat_messages':
       step = int(request.GET.get('step'))
       conversation = Conversation.objects.get(id = chat_id)
-      messages = list(conversation.messages.order_by('-date_sent')[step * 15 : (step + 1) * 15])
-      messages.reverse()
+
       if User.objects.get(id = user_id) in conversation.users.all():
-        messages = list(conversation.messages.order_by('-date_sent')[step * 15 : (step + 1) * 15]);messages.reverse()
-        return JsonResponse({'messages': [message.serialize() for message in messages], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
+        messages = list(conversation.messages.order_by('-date_sent')[step * 15 : (step + 1) * 15])
+        messages.reverse()
+
+        # mark unread messages as read
+        for message in messages:
+          mark_message_as_read(auth_user_id = user_id, message = message)
+        
+        return JsonResponse({'messages': [message.serialize(user_id) for message in messages], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
       else:
         return JsonResponse({'message': "You are not permitted to view this information", 'status': 403})
   else:
@@ -248,7 +257,7 @@ def messages_view(request):
         conversation = Conversation.objects.create()
         [conversation.users.add(user) for user in [chatter, chatter_with]]
         message = Message.objects.create(conversation = conversation, content = content, sender = chatter, receiver = chatter_with)
-      return JsonResponse({'status': 200, 'message': message.serialize()})
+      return JsonResponse({'status': 200, 'message': message.serialize(user_id)})
     return JsonResponse({'message': 'Invalid Operation', 'status': 403})
         
       

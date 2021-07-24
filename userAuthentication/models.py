@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.http import HttpRequest
 import json
 
 # Create your models here.
@@ -18,10 +19,10 @@ class User(AbstractUser):
       return self.cart.products.all()
     return self.store.products.all()
 
-  def serialize(self, isSelf):
+  def serialize(self, isSelf:bool, user_id:int):
     data_to_return = None
     if isSelf:
-      data_to_return = {'id': self.id, 'userName': self.username, 'firstName': self.first_name, 'lastName': self.last_name, 'profilePicture': self.profile_picture, 'postsMade': [post.serialize(self) for post in self.posts.order_by('-dateCreated')], 'userType': self.userType, 'accountDetails': self.account.serialize(), 'emailAddress': self.email, 'paypalEmail': self.paypal_email_address, 'profile': self.profile.serialize(), 'coverPicture': self.cover_picture, 'latestMessages': [conversation.messages.last().serialize() for conversation in self.conversation.order_by('-last_modified')]}
+      data_to_return = {'id': self.id, 'userName': self.username, 'firstName': self.first_name, 'lastName': self.last_name, 'profilePicture': self.profile_picture, 'postsMade': [post.serialize(self) for post in self.posts.order_by('-dateCreated')], 'userType': self.userType, 'accountDetails': self.account.serialize(), 'emailAddress': self.email, 'paypalEmail': self.paypal_email_address, 'profile': self.profile.serialize(), 'coverPicture': self.cover_picture, 'latestMessages': [conversation.messages.last().serialize(user_id = user_id) for conversation in self.conversation.order_by('-last_modified')]}
       if self.userType == 'buyer':
         data_to_return['cart'] = self.cart.serialize()
       else:

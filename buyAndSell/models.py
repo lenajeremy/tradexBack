@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models.base import Model
 from django.utils import timezone
 from userAuthentication.models import User, User_profile
 import random, json
@@ -162,7 +163,7 @@ class Message(models.Model):
   content = models.TextField()
   date_sent = models.DateTimeField(auto_now_add=True)
   
-  def serialize(self):
+  def serialize(self, user_id:int):
     return {
       'recipient':
         {
@@ -181,7 +182,9 @@ class Message(models.Model):
       'content': self.content,
       'date_sent': self.date_sent.timestamp(),
       'message_id': self.id,
-      'conversation_id': self.conversation.id
+      'conversation_id': self.conversation.id,
+      'read' : self.received,
+      'unread_message_count': self.conversation.messages.filter(received = False).exclude(sender = User.objects.get(id = user_id)).count()
     }
   def __str__(self):
-    return f"{self.content[0:30]}"
+    return f"{self.content[0:70]}"
