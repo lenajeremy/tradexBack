@@ -20,7 +20,7 @@ class Product(models.Model):
   name = models.CharField(max_length=100)
   description = models.CharField(max_length=200)
   price = models.IntegerField()
-  image = models.ImageField(upload_to = 'product_images')
+  image = models.TextField()
   watchers = models.ManyToManyField(User, related_name='watched_products', blank = True)
   store = models.ForeignKey(Store, on_delete = models.CASCADE, related_name = 'products')
   isAvailable = models.BooleanField(default = True)
@@ -30,7 +30,7 @@ class Product(models.Model):
   dateCreated = models.DateTimeField(auto_now_add=True)
   
   def serialize(self):
-    data_to_return = {'id': self.id, 'name': self.name, 'description': self.description, 'price': self.price, 'initialStock': self.initialStock, 'currentStock': self.availableStock, 'image': self.image.url, 'isAvailable': self.isAvailable, 'dateCreated': self.dateCreated.timestamp(), 'owner': {'id': self.store.user.id, 'username': self.store.user.username}}
+    data_to_return = {'id': self.id, 'name': self.name, 'description': self.description, 'price': self.price, 'initialStock': self.initialStock, 'currentStock': self.availableStock, 'image': self.image, 'isAvailable': self.isAvailable, 'dateCreated': self.dateCreated.timestamp(), 'owner': {'id': self.store.user.id, 'username': self.store.user.username}}
     return data_to_return
   
   def __str__(self):
@@ -51,15 +51,15 @@ class Cart(models.Model):
 class Post(models.Model):
   content = models.TextField()
   poster = models.ForeignKey(User, on_delete= models.DO_NOTHING, related_name='posts')
-  image = models.ImageField(upload_to = 'post_images', blank = True)
+  image = models.TextField()
   dateCreated = models.DateTimeField(auto_now_add = True)
   
   def serialize(self, user):
-    if self.image.name:
-      image = self.image.url
+    if self.image:
+      image = self.image
     else:
       image = None
-    data_to_return = {'id': self.id, "content": self.content,'posterId': self.poster.id, "poster": self.poster.username, 'image': image , 'dateCreated': self.dateCreated.timestamp(), 'number_of_likes': len(self.likes.all()), 'posterPicture': self.poster.profile_picture.url}
+    data_to_return = {'id': self.id, "content": self.content,'posterId': self.poster.id, "poster": self.poster.username, 'image': image , 'dateCreated': self.dateCreated.timestamp(), 'number_of_likes': len(self.likes.all()), 'posterPicture': self.poster.profile_picture}
     data_to_return['isLiked'] = user in [like.liker for like in self.likes.all()]
     return data_to_return
   
@@ -147,7 +147,7 @@ class Notification(models.Model):
     return self.text
 
   def serialize(self):
-    data_to_return = {'text': self.text, 'owner': self.owner.username, 'related_picture': self.related_user.profile_picture.url, 'related_user': self.related_user.id, 'notification_type': self.notification_type, 'dateCreated': self.dateCreated.timestamp()}
+    data_to_return = {'text': self.text, 'owner': self.owner.username, 'related_picture': self.related_user.profile_picture, 'related_user': self.related_user.id, 'notification_type': self.notification_type, 'dateCreated': self.dateCreated.timestamp()}
     return data_to_return
   
 class Conversation(models.Model):
@@ -169,14 +169,14 @@ class Message(models.Model):
           'id': self.receiver.id,
           'first_name': self.receiver.first_name,
           'last_name': self.receiver.last_name,
-          'picture': self.receiver.profile_picture.url
+          'picture': self.receiver.profile_picture
         },
       'sender': 
         {
           'first_name': self.sender.first_name, 
           'last_name': self.sender.last_name,
           'id': self.sender.id,
-          'picture': self.sender.profile_picture.url
+          'picture': self.sender.profile_picture
         },
       'content': self.content,
       'date_sent': self.date_sent.timestamp(),

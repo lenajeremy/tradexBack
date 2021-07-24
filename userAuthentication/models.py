@@ -9,8 +9,8 @@ class User(AbstractUser):
     ('seller', 'Seller')
   )
   userType = models.CharField(choices=USERTYPE_CHOICES, default='buyer', max_length=9)
-  profile_picture = models.TextField(blank = True)
-  cover_picture = models.TextField(blank = True)
+  profile_picture = models.TextField(default = "https://img.icons8.com/bubbles/2x/user-male.png")
+  cover_picture = models.TextField(default  = "https://graphicsfamily.com/wp-content/uploads/2020/10/Abstract-Facebook-Cover-Design-Presentation-scaled.jpg")
   paypal_email_address = models.EmailField()
   
   def getProducts(self):

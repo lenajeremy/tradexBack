@@ -225,12 +225,12 @@ def messages_view(request):
       messages.reverse()
       if User.objects.get(id = user_id) in conversation.users.all():
         messages = list(conversation.messages.order_by('-date_sent')[step * 15 : (step + 1) * 15]);messages.reverse()
-        return JsonResponse({'messages': [message.serialize() for message in messages], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture.url, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
+        return JsonResponse({'messages': [message.serialize() for message in messages], 'status': 200, 'users': [{'firstName': user.first_name, 'lastName': user.last_name, 'picture': user.profile_picture, 'id': user.id} for user in conversation.users.exclude(id = user_id)]})
       else:
         return JsonResponse({'message': "You are not permitted to view this information", 'status': 403})
   else:
     if operation == 'send_message':
-      undecided = request.GET.get('undecided');
+      undecided = request.GET.get('undecided')
       message = None
       if undecided == 'false':
         chatter_with = Conversation.objects.get(id = chat_id).users.exclude(id = user_id).get()
